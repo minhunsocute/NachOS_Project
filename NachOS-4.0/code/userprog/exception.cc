@@ -51,7 +51,7 @@
 //	is in machine.h.
 //----------------------------------------------------------------------
 
-void counter()
+void counter() // hàm thực hiện program counter để tránh lặp chương trình
 {
 	/* set previous programm counter (debugging only)*/
 	kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
@@ -100,20 +100,20 @@ void handle_SC_halt()
 }
 
 
-void handle_SC_ReadNum() {
+void handle_SC_ReadNum() { // hàm để thực hiện system call read num đầu tiên nó sẽ goirjddeesn hàm Sysreadnum để đọc số
 	int num_read = SysReadNum();
-	kernel->machine->WriteRegister(2, num_read);
+	kernel->machine->WriteRegister(2, num_read); 
 	return counter();
 }
 
-void handle_SC_ReadChar() {
+void handle_SC_ReadChar() { // hàm để thực hiện system call read char đầu tiên nó sẽ goirjddeesn hàm SysrreadChar để đọc char
 	char result = SysReadChar();
 	cout << result << "\n";
 	kernel->machine->WriteRegister(2, (int)result);
 	return counter();
 }
 
-void handle_SC_RandomNum(){
+void handle_SC_RandomNum(){ // hàm để thực hiện system call  đầu tiên nó sẽ goị đến SysRandomNum để tiến hành random
 	int result = SysRandomNum();
 	cout<< result<< "\n";
 	kernel->machine->WriteRegister(2, result);
@@ -123,33 +123,33 @@ int MAX_STRING = 255;
 void sendDataToUserSpace(){
 
 }
-void handle_SC_ReadString() {
-	int add = kernel->machine->ReadRegister(4);
-	int length = kernel->machine->ReadRegister(5);
-	// cout << add << endl;
+void handle_SC_ReadString() { 
+	int add = kernel->machine->ReadRegister(4); //Đọc địa chỉ của string
+	int length = kernel->machine->ReadRegister(5);// Đọc độ dài của chuỗi
+	// cout << add << endl; 
 	// cout << length << "\n";
-	char* result = new char[256];
-	SysReadString(result, length);
-	cout << result <<"-" << sizeof(result) << " ["<< result[length]<<"]" << endl ;
-	for(int i = 0; i<= length ; i++) {
+	char* result = new char[256]; // Khởi tạo mảng char để chứa chuỗi
+	SysReadString(result, length); // Gọi hàm SysReadString để tiến hành đọc chuỗi
+// 	cout << result <<"-" << sizeof(result) << " ["<< result[length]<<"]" << endl ;
+	for(int i = 0; i<= length ; i++) { // Ứng với từng phần tử trong chuỗi tiến hành gửi dữ liệu của phần tử chuỗi sang userspace
 		kernel->machine->WriteMem(add + i, 1,result[i]);
 	}
 	delete[] result;
 	return counter();
 }
-void handle_SC_PrintChar(){
-	int result = kernel->machine->ReadRegister(4);
-	kernel->synchConsoleOut->PutChar(char(result));
+void handle_SC_PrintChar(){ // in char
+	int result = kernel->machine->ReadRegister(4); // đọc phần tử char đầu vào tại thanh ghi thứ 4
+	kernel->synchConsoleOut->PutChar(char(result)); // TIến hành in char bằng cách gọi hành PutChar
 	return counter();
 }
-void handle_SC_PrintString(){
-	int add = kernel->machine->ReadRegister(4);
-	char* result = new char[MAX_STRING+1];
-	int len = 0;
-	while(true){
+void handle_SC_PrintString(){ // in chuỗi
+	int add = kernel->machine->ReadRegister(4); // đọc độ dài chuỗi
+	char* result = new char[MAX_STRING+1];// khởi tạo mảng chứa chuỗi
+	int len = 0; 
+	while(true){ // tiến hafnnh lấy chuỗi nhập vào bõ vào mảng chuỗi
 		int c;
-		kernel->machine->ReadMem(add + len,1, &c);
-		if(c == '\0') break;
+		kernel->machine->ReadMem(add + len,1, &c); // Đọc chuỗi
+		if(c == '\0') break; 
 		len++;
 	}
 	for(int i = 0; i< len ; i++) {
@@ -157,39 +157,38 @@ void handle_SC_PrintString(){
 		kernel->machine->ReadMem(add + i, 1, &c);
 		result[i] = (char)c;
 	}
-	for(int i = 0; i< len; i++){
+	for(int i = 0; i< len; i++){ // dùng hàm putchar để in ra từng phần tử chuỗi
 		kernel->synchConsoleOut->PutChar(result[i]);
 	}
-	delete[] result;
-	kernel->machine->WriteRegister(2, 3);
+	delete[] result; // xóa mảng đã tạo
 	return counter();
 }
 
 void handle_SC_PrintNum() {
-	int num = kernel->machine->ReadRegister(4);
-	if(num == 0) {
+	int num = kernel->machine->ReadRegister(4);// đọc số nhập vào ở thanh ghi thứ 4
+	if(num == 0) { // nếu như bằng 0 thì cho nó out bằng 0 luôn
 		kernel->synchConsoleOut->PutChar('0');
 		return counter();
-	}
-	if(num + 1 == -2147483647){
-		kernel->synchConsoleOut->PutChar('-');
-		string num_arr = "2147483648";	
+	} 
+	if(num + 1 == -2147483647){ // nếu như nó vượt giới hạn dưới
+		kernel->synchConsoleOut->PutChar('-'); // cho in số âm trc
+		string num_arr = "2147483648";	 // r in từng phần tử trong chuỗi này sau
 		for(int i =  0; i < 10; i++) {
 			kernel->synchConsoleOut->PutChar(num_arr[i]);
 		}
 		return counter();
 	}
-	if(num < 0) {
+	if(num < 0) { // nếu như số amm cho in dấu - ra trc
 		kernel->synchConsoleOut->PutChar('-');
 		num = -num;
 	}
-	char* buffer = new char[13];
+	char* buffer = new char[13]; // sao chép số đã đọc đc vào mãng chuỗi
 	int n = 0;
 	while(num != 0){
 		buffer[n++] = (char)(num % 10 + 48);
 		num /= 10;
 	}
-	for(int i = n-1;i >= 0; i--) {
+	for(int i = n-1;i >= 0; i--) { /// cho in ra các phần tử trong mảng bằng hàm putchar
 		kernel->synchConsoleOut->PutChar(buffer[i]);
 	}
 	delete[] buffer;
